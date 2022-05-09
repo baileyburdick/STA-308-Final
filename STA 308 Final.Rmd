@@ -1,0 +1,83 @@
+---
+title: "STA 308 Final"
+author: "Bailey Burdick"
+date: "5/7/2022"
+output: html_document
+---
+### This assignment is my STA 308 Final assignment. 
+### The purpose of this assignment is to calculate the difference in unemployment between March 2021 and March 2022.
+### Then, I am calculating the mean, standard deviation, and coefficient of variation for this difference.
+### Lastly I put this information into a table. 
+
+
+#### Importing tidyverse and the data sets
+```{r}
+library(tidyverse)
+march_unemploy_data <- read.csv("https://tjfisher19.github.io/data/marchStateUnemployment.csv")
+abb_codes_data <-read_csv("https://tjfisher19.github.io/data/state_abb_codes.csv")
+census_regions_data <- read_csv("https://tjfisher19.github.io/data/censusRegions.csv")
+```
+
+#### Filtering out DC from all the data sets
+```{r}
+march_unemploy_50 <- march_unemploy_data %>% 
+    filter(State != "District of Columbia") 
+
+abb_codes_50 <- abb_codes_data %>% 
+    filter(State != "District of Columbia") 
+
+census_regions_50 <- census_regions_data %>% 
+    filter(State != "DC") 
+```
+
+#### Merging the data sets together into "unemployment_abb"
+```{r}
+unemployment_abb<- merge(abb_codes_50 ,march_unemploy_50, by = "State" )
+
+unemployment_abb_census <- merge(unemployment_abb, census_regions_50, by.x = "Code",by.y = "State")
+```
+
+#### Removing the extra state variables - Code and Abbrev
+```{r}
+unemployment_abb_census <- unemployment_abb_census %>% 
+  select(-Code) %>%  select(-Abbrev)
+```
+
+#### Making the variable mean_unemployment_rates by subtracting mean unemployment rates in March 2021 by March 2022
+```{r}
+mean_unemployment_rates <- unemployment_abb_census %>% 
+  group_by(Region) %>% 
+  summarise(mean= mean(March_21 - March_22))
+```
+
+#### Making the variable sd_unemployment_rates by subtracting standard deviation of unemployment rates in March 2022 FROM March 2021
+```{r}
+sd_unemployment_rates <- unemployment_abb_census %>% 
+  group_by(Region) %>% 
+  summarise("Standard Deviation "= sd(March_21 - March_22))
+```
+
+#### Making the variable cv_unemployment_rates by subtracting coefficient of variation unemployment rates in March 2021 by March 2022
+```{r}
+cv_unemployment_rates <- unemployment_abb_census %>% 
+  group_by(Region) %>% 
+  summarise("Coefficient of variation" = sd(March_21 - March_22)/mean(March_21 - March_22))
+```
+
+#### Merging the data sets together into "mean_std_cv"
+```{r}
+mean_std<- merge(mean_unemployment_rates ,sd_unemployment_rates, by = "Region" )
+
+mean_std_cv <- merge(mean_std, cv_unemployment_rates, by = "Region")
+```
+
+
+|           	| Mean 	| Standard Deviation 	| Coefficient of Variation 	|
+|-----------	|------	|--------------------	|--------------------------	|
+| Midwest   	| 1.34 	| 0.46               	| 0.34                     	|
+| Northeast 	| 2.11 	| 0.75               	| 0.35                     	|
+| South     	| 1.54 	| 0.49               	| 0.32                     	|
+| West      	| 2.15 	| 0.91               	| 0.42                     	|
+
+
+
